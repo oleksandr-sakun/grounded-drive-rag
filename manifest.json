@@ -1,0 +1,86 @@
+{
+  "generated_at": "2026-07-12T11:19:08+00:00",
+  "source": "/opt/freelance/demo/drivebot/corpus",
+  "docs": [
+    {
+      "doc_id": "01-employee-handbook.md",
+      "title": "Kestrel Labs — Employee Handbook",
+      "source_mime": "text/markdown",
+      "revision": "-",
+      "content_sha256": "c119762636d8c590155bffa53e75401d0d56db40faef352a8cde1d4afcdc8a3d",
+      "chunk_count": 4,
+      "web_url": "file:///opt/freelance/demo/drivebot/corpus/01-employee-handbook.md",
+      "error": ""
+    },
+    {
+      "doc_id": "02-expense-policy.md",
+      "title": "Expense Policy",
+      "source_mime": "text/markdown",
+      "revision": "-",
+      "content_sha256": "94b09adbda75223a761d908caad34672ee83386f3816d4ec0f1a27111d2ad5b2",
+      "chunk_count": 3,
+      "web_url": "file:///opt/freelance/demo/drivebot/corpus/02-expense-policy.md",
+      "error": ""
+    },
+    {
+      "doc_id": "03-support-sla.md",
+      "title": "Customer Support SLA",
+      "source_mime": "text/markdown",
+      "revision": "-",
+      "content_sha256": "ccc58c90b1e4408eb52d6b21af29062e3dd01e913710364cee085bb1071bbd33",
+      "chunk_count": 3,
+      "web_url": "file:///opt/freelance/demo/drivebot/corpus/03-support-sla.md",
+      "error": ""
+    },
+    {
+      "doc_id": "04-security-policy.md",
+      "title": "Information Security Policy",
+      "source_mime": "text/markdown",
+      "revision": "-",
+      "content_sha256": "4c9570dbd88b3434e47c1caa48a893cfd2c4be86cf59b5e78c47737b8163abae",
+      "chunk_count": 4,
+      "web_url": "file:///opt/freelance/demo/drivebot/corpus/04-security-policy.md",
+      "error": ""
+    },
+    {
+      "doc_id": "05-pricing.md",
+      "title": "Kestrel Labs — Pricing (public)",
+      "source_mime": "text/markdown",
+      "revision": "-",
+      "content_sha256": "e3f70c98aff392e7b7cd3efdc6354d360601453a48b9f734cc16759914e8c7d5",
+      "chunk_count": 3,
+      "web_url": "file:///opt/freelance/demo/drivebot/corpus/05-pricing.md",
+      "error": ""
+    },
+    {
+      "doc_id": "06-onboarding.md",
+      "title": "New Engineer Onboarding",
+      "source_mime": "text/markdown",
+      "revision": "-",
+      "content_sha256": "dc59b904be15be5d95f6ea981598ac54db53984ac2c75c6e3543b29e43045a68",
+      "chunk_count": 4,
+      "web_url": "file:///opt/freelance/demo/drivebot/corpus/06-onboarding.md",
+      "error": ""
+    },
+    {
+      "doc_id": "07-release-process.md",
+      "title": "Release Process",
+      "source_mime": "text/markdown",
+      "revision": "-",
+      "content_sha256": "2acc51327b05cc9c4055fa176d0f23fd4c39e9f95f42a670f6d3ad914ca162c6",
+      "chunk_count": 4,
+      "web_url": "file:///opt/freelance/demo/drivebot/corpus/07-release-process.md",
+      "error": ""
+    },
+    {
+      "doc_id": "08-glossary.md",
+      "title": "Glossary",
+      "source_mime": "text/markdown",
+      "revision": "-",
+      "content_sha256": "fc07b91d1d06f20888af705663ee6f23b677985e17d43177a61e9b0a757835ba",
+      "chunk_count": 1,
+      "web_url": "file:///opt/freelance/demo/drivebot/corpus/08-glossary.md",
+      "error": ""
+    }
+  ]
+}

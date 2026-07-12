@@ -1,0 +1,7 @@
+sa-key.json
+*.json.key
+.venv/
+__pycache__/
+.env
+corpus-drive/
+manifest-drive.json
