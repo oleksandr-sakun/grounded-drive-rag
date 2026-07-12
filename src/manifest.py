@@ -36,6 +36,10 @@ class DocEntry:
     content_sha256: str  # hash of the *normalized markdown*
     chunk_count: int
     web_url: str = ""  # link back to the original, for citations
+    local_file: str = ""  # the .md we wrote. The join key between the manifest
+    #                       and the corpus on disk -- do not derive this from the
+    #                       title, which is the heading INSIDE the document and
+    #                       need not resemble the Drive filename at all.
     error: str = ""  # non-empty if this document failed to ingest
 
 

@@ -321,12 +321,28 @@ class VertexAISearch:
             f"/servingConfigs/default_search:search"
         )
 
+    def _token(self) -> str:
+        if self.access_token:
+            return self.access_token
+        # Application Default Credentials: the service-account key pointed at by
+        # GOOGLE_APPLICATION_CREDENTIALS. Works on an unstructured data store.
+        # It would NOT work on a connector-created store with ACLs enabled --
+        # that returns zero results and no error. See README.
+        from google.auth import default
+        from google.auth.transport.requests import Request
+
+        creds, _ = default(
+            scopes=["https://www.googleapis.com/auth/cloud-platform"]
+        )
+        creds.refresh(Request())
+        return creds.token
+
     def search(self, query: str, k: int = 5) -> list[Hit]:
         import requests  # local import: the local backend needs no network
 
         resp = requests.post(
             self.endpoint,
-            headers={"Authorization": f"Bearer {self.access_token}"},
+            headers={"Authorization": f"Bearer {self._token()}"},
             json={
                 "query": expand(query),
                 "pageSize": k,
@@ -367,9 +383,125 @@ class VertexAISearch:
         return hits
 
 
-def build_retriever(backend: str, chunks: list[Chunk], **kw) -> Retriever:
-    if backend == "local":
+# ---------------------------------------------------------------------------
+# Backend: hybrid (BM25 + embeddings)
+#
+# Keyword retrieval knows what things are CALLED. Semantic retrieval knows what
+# they MEAN. Neither is sufficient:
+#
+#   "KX-Code"    -> exact token. Embeddings blur it into every other identifier
+#                   in the corpus and return something plausible and wrong.
+#   "time off"   -> the documents say "vacation". BM25 finds nothing unless a
+#                   human wrote that synonym into a dictionary by hand.
+#
+# So both, fused. The fusion is Reciprocal Rank Fusion: combine on RANK, not on
+# score. BM25 scores and cosine similarities are different currencies -- one is
+# unbounded and query-dependent, the other is bounded [-1,1] -- and adding them
+# together is meaningless arithmetic that happens to produce a number.
+#
+# RRF only asks each retriever "how highly did you rank this?", which is a
+# question both can answer honestly.
+# ---------------------------------------------------------------------------
+
+
+class HybridRetriever:
+    name = "hybrid-bm25+embeddings"
+
+    RRF_K = 60  # standard damping constant; larger = flatter rank weighting
+
+    def __init__(
+        self,
+        chunks: list[Chunk],
+        embedder,
+        semantic_weight: float = 0.5,
+    ) -> None:
+        from embeddings import cosine  # local import keeps bm25 dependency-free
+
+        self._cosine = cosine
+        self.chunks = chunks
+        self.embedder = embedder
+        self.semantic_weight = semantic_weight
+
+        # BM25 half. Also the source of the grounding gate's vocabulary --
+        # see concepts_for below.
+        self.bm25 = LocalBM25(chunks)
+
+        self.vectors = embedder.embed_documents([c.text for c in chunks])
+
+    def concepts_for(self, query: str) -> list[Concept]:
+        """Delegated to BM25 on purpose.
+
+        The grounding gate must be grounded in the CORPUS, not in whichever
+        index happens to be live. If it asked the embedding model whether an
+        answer exists, it would get a confident yes -- embeddings always return
+        a nearest neighbour, no matter how far away it is. That is precisely the
+        failure this gate exists to catch.
+        """
+        return self.bm25.concepts_for(query)
+
+    def search(self, query: str, k: int = 5) -> list[Hit]:
+        pool = max(k * 3, 10)
+
+        lexical = self.bm25.search(query, k=pool)
+        lex_rank = {h.chunk.chunk_id: r for r, h in enumerate(lexical)}
+
+        qv = self.embedder.embed_query(query)
+        sims = sorted(
+            (
+                (self._cosine(qv, v), c)
+                for v, c in zip(self.vectors, self.chunks)
+            ),
+            key=lambda t: t[0],
+            reverse=True,
+        )[:pool]
+        sem_rank = {c.chunk_id: r for r, (_, c) in enumerate(sims)}
+
+        by_id = {c.chunk_id: c for c in self.chunks}
+        w = self.semantic_weight
+
+        fused: dict[str, float] = {}
+        for cid, r in lex_rank.items():
+            fused[cid] = fused.get(cid, 0.0) + (1 - w) / (self.RRF_K + r + 1)
+        for cid, r in sem_rank.items():
+            fused[cid] = fused.get(cid, 0.0) + w / (self.RRF_K + r + 1)
+
+        ranked = sorted(fused.items(), key=lambda t: t[1], reverse=True)[:k]
+
+        # RRF scores are tiny (~0.01). Rescaled so the numbers printed in the
+        # logs stay human-readable and roughly comparable to BM25's range.
+        return [Hit(chunk=by_id[cid], score=score * 1000) for cid, score in ranked]
+
+
+def build_retriever(settings, chunks: list[Chunk]) -> Retriever:
+    """One switch. Nothing above this line knows which branch was taken."""
+    if settings.backend == "bm25":
         return LocalBM25(chunks)
-    if backend == "vertex":
-        return VertexAISearch(**kw)
-    raise ValueError(f"unknown backend: {backend!r}")
+
+    if settings.backend == "hybrid":
+        from embeddings import Embedder
+
+        return HybridRetriever(
+            chunks,
+            embedder=Embedder(
+                model=settings.embed_model,
+                dim=settings.embed_dim,
+                cache_path=settings.embed_cache,
+            ),
+            semantic_weight=settings.semantic_weight,
+        )
+
+    if settings.backend == "vertex":
+        r = VertexAISearch(
+            project_id=settings.project_id,
+            data_store_id=settings.data_store_id,
+            location=settings.location,
+        )
+        # The gate needs corpus vocabulary, which Vertex cannot provide -- it
+        # returns matches, never "I have never seen this word". So we keep a
+        # local BM25 index alongside it purely as the gate's dictionary. It is
+        # cheap, and it means switching to a managed backend does not quietly
+        # switch off the refusal logic.
+        r.concepts_for = LocalBM25(chunks).concepts_for  # type: ignore[method-assign]
+        return r
+
+    raise ValueError(f"unknown backend: {settings.backend!r}")

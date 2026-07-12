@@ -1,7 +1,11 @@
 sa-key.json
 *.json.key
+.env
+.env.bak
 .venv/
 __pycache__/
-.env
+*.bak
+*.bak[0-9]
+.embeddings.json
 corpus-drive/
 manifest-drive.json

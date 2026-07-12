@@ -1,0 +1,34 @@
+[Unit]
+Description=Grounded Drive RAG — Slack bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=osakun
+Group=osakun
+WorkingDirectory=/opt/freelance/demo/drivebot/src
+
+# Secrets live in .env, mode 600, outside git. Not in this unit file --
+# systemd unit files are world-readable by default.
+EnvironmentFile=/opt/freelance/demo/drivebot/.env
+
+ExecStart=/opt/freelance/demo/drivebot/.venv/bin/python3 /opt/freelance/demo/drivebot/src/slack_bot.py
+
+Restart=always
+RestartSec=5
+
+# The bot dials out over Socket Mode; it needs no inbound access and no
+# privileges beyond reading its own directory.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/opt/freelance/demo/drivebot
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=drivebot-slack
+
+[Install]
+WantedBy=multi-user.target

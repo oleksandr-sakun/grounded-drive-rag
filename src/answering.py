@@ -90,7 +90,10 @@ def format_citations(hits: list[Hit], used: list[int] | None = None) -> str:
     for i, h in enumerate(hits, start=1):
         if used and i not in used:
             continue
-        lines.append(f"  [{i}] {h.chunk.doc_title} — {h.chunk.section_path}")
+        label = h.chunk.section_path
+        if not label.startswith(h.chunk.doc_title):
+            label = f"{h.chunk.doc_title} — {label}"
+        lines.append(f"  [{i}] {label}")
     return "\n".join(lines)
 
 

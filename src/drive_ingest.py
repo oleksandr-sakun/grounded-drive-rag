@@ -48,6 +48,8 @@ SUPPORTED = {GOOGLE_DOC, GOOGLE_SHEET, PDF, "text/markdown", "text/plain"}
 
 
 def slugify(name: str) -> str:
+    # Strip the extension first, or "08-glossary.md" becomes "08-glossarymd".
+    name = re.sub(r"\.(md|pdf|txt|csv|docx?|xlsx?)$", "", name, flags=re.I)
     s = re.sub(r"[^\w\s-]", "", name.lower()).strip()
     return re.sub(r"[\s_]+", "-", s)[:60] or "untitled"
 
@@ -249,6 +251,7 @@ def main() -> None:
                 content_sha256=sha256(md),
                 chunk_count=len(chunks),
                 web_url=f.get("webViewLink", ""),
+                local_file=path.name,
             )
         )
 

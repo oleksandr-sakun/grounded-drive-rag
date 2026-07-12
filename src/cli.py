@@ -24,7 +24,8 @@ from pathlib import Path
 from answering import answer, format_citations
 from chunking import chunk_markdown
 from manifest import DocEntry, Manifest, sha256
-from retrieval import LocalBM25
+from config import Settings
+from retrieval import build_retriever
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CORPUS = ROOT / "corpus"
@@ -81,7 +82,7 @@ def cmd_index(corpus_dir: Path) -> None:
 
 def cmd_ask(corpus_dir: Path, question: str, use_llm: bool, k: int) -> None:
     chunks, _ = load_corpus(corpus_dir)
-    retriever = LocalBM25(chunks)
+    retriever = build_retriever(Settings.from_env(), chunks)
 
     res = answer(question, retriever, k=k, call_model=use_llm)
 
@@ -135,8 +136,9 @@ EVAL_MUST_REFUSE = [
 
 def cmd_eval(corpus_dir: Path, use_llm: bool) -> None:
     chunks, _ = load_corpus(corpus_dir)
-    retriever = LocalBM25(chunks)
+    retriever = build_retriever(Settings.from_env(), chunks)
 
+    print(f"backend: {retriever.name}")
     print(f"corpus: {corpus_dir}  ({len(chunks)} chunks)")
     print()
     print("=" * 72)
