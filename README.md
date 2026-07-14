@@ -294,10 +294,11 @@ and `manifest.py` contain no transport code at all, and they are already driven 
 two independent front ends in this repository:
 
 ```
-        corpus → retrieval → gate → answering + citations
-                     ▲                    ▲
-            ┌────────┴─────────┬──────────┘
-         cli.py          slack_bot.py        ← and an HTTP API here
+      corpus → retrieval → gate → answering + citations
+                            ▲
+             ┌──────────────┼──────────────┐
+          cli.py      slack_bot.py    web API
+                                      (not built — an adapter, not a rewrite)
 ```
 
 That is why a third front end is an adapter, not a rewrite. A React/Next.js chat
