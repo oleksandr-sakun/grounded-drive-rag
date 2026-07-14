@@ -280,17 +280,33 @@ have to choose between "the right default" and "not locked in".
 
 ---
 
-## Interface: Slack, not a web app
+## Interface: Slack first, not Slack only
 
 People don't visit a separate website to ask a question. They ask where they
 already are.
 
 A standalone web chat gets used in week one, forgotten by week three, and quietly
 cancelled at renewal. Put the assistant where the work already happens and it
-costs nothing to reach.
+costs nothing to reach. So Slack is the default here — not the limit.
 
-A web widget is a reasonable phase two, if people outside the workspace need
-access. It is not phase one.
+The core knows nothing about Slack. `retrieval.py`, `answering.py`, `chunking.py`
+and `manifest.py` contain no transport code at all, and they are already driven by
+two independent front ends in this repository:
+
+```
+        corpus → retrieval → gate → answering + citations
+                     ▲                    ▲
+            ┌────────┴─────────┬──────────┘
+         cli.py          slack_bot.py        ← and an HTTP API here
+```
+
+That is why a third front end is an adapter, not a rewrite. A React/Next.js chat
+with token streaming and clickable citations is a thin layer over the same call
+the CLI already makes — worth building when the users live in a web product, or
+sit outside the workspace entirely; not worth building *first*, when they don't.
+
+The interface is a deployment decision. The grounding is an architectural one.
+Only one of them is expensive to get wrong.
 
 ---
 
