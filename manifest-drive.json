@@ -1,0 +1,94 @@
+{
+  "generated_at": "2026-07-12T14:38:59+00:00",
+  "source": "drive:1CCWz1BHnwNKnWOSM8GRBm8rauQ6yXxbg",
+  "docs": [
+    {
+      "doc_id": "10ijHBvEGHoUa55P5G4WBxKtKQrKVJo4qWRrdIRuKxes",
+      "title": "kestrel-pricing",
+      "source_mime": "application/vnd.google-apps.spreadsheet",
+      "revision": "2026-07-12T11:55:40.805Z",
+      "content_sha256": "d7fdfd4c4134d90fc5d576380eedc9debbe07719c03967459a30f271456e449d",
+      "chunk_count": 1,
+      "web_url": "https://docs.google.com/spreadsheets/d/10ijHBvEGHoUa55P5G4WBxKtKQrKVJo4qWRrdIRuKxes/edit?usp=drivesdk",
+      "local_file": "kestrel-pricing.md",
+      "error": ""
+    },
+    {
+      "doc_id": "1UDMdlzX7zHKs-vUPS3am4B4ZJP-QZeyf",
+      "title": "Security Policy (signed).pdf",
+      "source_mime": "application/pdf",
+      "revision": "2026-07-12T11:53:01.000Z",
+      "content_sha256": "23c15bb5238434a4ec049c100ad2d2ab751eb8d1a444283a948a3c991856a778",
+      "chunk_count": 4,
+      "web_url": "https://drive.google.com/file/d/1UDMdlzX7zHKs-vUPS3am4B4ZJP-QZeyf/view?usp=drivesdk",
+      "local_file": "security-policy-signed.md",
+      "error": ""
+    },
+    {
+      "doc_id": "1RifeKhb_YWNMfI0b8FHlN6ROdMUqMfHiISPgihANasw",
+      "title": "03-support-sla.md",
+      "source_mime": "application/vnd.google-apps.document",
+      "revision": "2026-07-12T11:50:46.728Z",
+      "content_sha256": "14bf69eca0eb870c92dca0d985283c8b30e2a215ebc985570c3f9f31d098e976",
+      "chunk_count": 3,
+      "web_url": "https://docs.google.com/document/d/1RifeKhb_YWNMfI0b8FHlN6ROdMUqMfHiISPgihANasw/edit?usp=drivesdk",
+      "local_file": "03-support-sla.md",
+      "error": ""
+    },
+    {
+      "doc_id": "1KSC6CEX56E5d7iXzVcgQPZJyKUnoZTOQABjEgyrVFS4",
+      "title": "07-release-process.md",
+      "source_mime": "application/vnd.google-apps.document",
+      "revision": "2026-07-12T11:50:46.636Z",
+      "content_sha256": "f6893b3858d457a15f6c637ad539fa2ab6d6f09cb8ccd6e3e9d9c6209ab390f2",
+      "chunk_count": 4,
+      "web_url": "https://docs.google.com/document/d/1KSC6CEX56E5d7iXzVcgQPZJyKUnoZTOQABjEgyrVFS4/edit?usp=drivesdk",
+      "local_file": "07-release-process.md",
+      "error": ""
+    },
+    {
+      "doc_id": "175TIsVCLnTWaIWEij9RvHJSU_XUYhwFM0dU060coylk",
+      "title": "08-glossary.md",
+      "source_mime": "application/vnd.google-apps.document",
+      "revision": "2026-07-12T11:50:46.618Z",
+      "content_sha256": "cc1aee5c1b640b1c2efa7376059af5ea08221bf408f3208927a7c63c9bca2634",
+      "chunk_count": 1,
+      "web_url": "https://docs.google.com/document/d/175TIsVCLnTWaIWEij9RvHJSU_XUYhwFM0dU060coylk/edit?usp=drivesdk",
+      "local_file": "08-glossary.md",
+      "error": ""
+    },
+    {
+      "doc_id": "1SNF8E6mQaNUBL4KTe-FF0Z-pplOb_1mJhtT0nmLt2HI",
+      "title": "06-onboarding.md",
+      "source_mime": "application/vnd.google-apps.document",
+      "revision": "2026-07-12T11:50:46.573Z",
+      "content_sha256": "ac66c7d416096050947fe86fd7d66ed61ff0e7508eab3fee93063aa8291c66a7",
+      "chunk_count": 4,
+      "web_url": "https://docs.google.com/document/d/1SNF8E6mQaNUBL4KTe-FF0Z-pplOb_1mJhtT0nmLt2HI/edit?usp=drivesdk",
+      "local_file": "06-onboarding.md",
+      "error": ""
+    },
+    {
+      "doc_id": "1MjQ61a0nVFmFLeHetr0Q3-318qANcnlQ7U3SUghcSFA",
+      "title": "02-expense-policy.md",
+      "source_mime": "application/vnd.google-apps.document",
+      "revision": "2026-07-12T11:50:46.307Z",
+      "content_sha256": "07ba491b63931df81d8b0a9801c842e1c91e63ab7a162d3df1cffc4f5db28acb",
+      "chunk_count": 3,
+      "web_url": "https://docs.google.com/document/d/1MjQ61a0nVFmFLeHetr0Q3-318qANcnlQ7U3SUghcSFA/edit?usp=drivesdk",
+      "local_file": "02-expense-policy.md",
+      "error": ""
+    },
+    {
+      "doc_id": "11Az90gA5H086iDzrh9ns1c6zFp-mBSrE6iIy2ef-qqc",
+      "title": "01-employee-handbook.md",
+      "source_mime": "application/vnd.google-apps.document",
+      "revision": "2026-07-12T11:50:46.074Z",
+      "content_sha256": "cc689e53a3583a36622d55e273fcfdc61fd4a57ae0fae60732d2c4122b0af562",
+      "chunk_count": 4,
+      "web_url": "https://docs.google.com/document/d/11Az90gA5H086iDzrh9ns1c6zFp-mBSrE6iIy2ef-qqc/edit?usp=drivesdk",
+      "local_file": "01-employee-handbook.md",
+      "error": ""
+    }
+  ]
+}
