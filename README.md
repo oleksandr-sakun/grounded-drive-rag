@@ -11,19 +11,22 @@ That last part is the whole product. Retrieval is easy. Refusal is hard.
 
 Retrieval demo needs no API key and no cloud account:
 
-```bash
+```
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+
 cd src
 python3 cli.py index                 # build the index, print the manifest
 python3 cli.py eval --no-llm         # run the test set
 python3 cli.py ask "how many vacation days do I get?" --no-llm
 ```
 
-For generated answers, set `GEMINI_API_KEY` (or `MODEL_PROVIDER=anthropic` +
-`ANTHROPIC_API_KEY`) and drop `--no-llm`.
+For generated answers, copy `.env.example` to `.env` and set `GEMINI_API_KEY`
+(or `MODEL_PROVIDER=anthropic` + `ANTHROPIC_API_KEY`), then drop `--no-llm`.
 
 Against a real Drive folder:
 
-```bash
+```
 export GOOGLE_APPLICATION_CREDENTIALS=./sa-key.json
 python3 drive_ingest.py --folder-id <folder-id> --out ../corpus-drive
 python3 cli.py --corpus ../corpus-drive eval --no-llm
@@ -31,7 +34,7 @@ python3 cli.py --corpus ../corpus-drive eval --no-llm
 
 Retrieval backend is one environment variable:
 
-```bash
+```
 RAG_BACKEND=bm25     # keyword. no network, no bill, no latency
 RAG_BACKEND=hybrid   # BM25 + Gemini embeddings, rank-fused
 RAG_BACKEND=vertex   # Vertex AI Search (Discovery Engine)
@@ -56,14 +59,27 @@ The second screenshot is the product. The first one every RAG demo can do.
 ## The eval set is the point
 
 ```
+$ python3 cli.py eval --no-llm
+backend: local-bm25   corpus: corpus  (26 chunks)
+
 ANSWERABLE   — these must NOT be refused     10/10
-UNANSWERABLE — these MUST be refused          6/6
+UNANSWERABLE — these MUST be refused           6/6
+16/16 passed
+
+$ python3 cli.py --corpus ../corpus-drive eval --no-llm
+backend: local-bm25   corpus: corpus-drive  (24 chunks)
+16/16 passed
 ```
 
 Any RAG demo can answer questions. This one is tested on questions it must
 *refuse*: crypto payment policy, parental leave, who the CEO is, whether you can
 bring a dog to the office. None of that exists in the corpus, so any answer would
 be an invention.
+
+The same 16 cases pass against two different corpora: hand-written `.md` files,
+and a Google Drive export where the security policy arrives as a signed PDF and
+pricing lives in a Sheet. Different files, different headings, different scores —
+same verdicts. The gate is anchored to the documents, not tuned to one set of them.
 
 A RAG system that quietly guesses is worse than no system, because a wrong answer
 delivered confidently — with a citation attached — is harder to catch than no
@@ -79,12 +95,16 @@ repository.
 ### 1. A score threshold is not a grounding gate
 
 The obvious approach: refuse if the retrieval score is below X. It failed in both
-directions on the first run.
+directions on the first run — and it fails in both directions on the numbers this
+repository still produces today:
 
-| Question | Score | What happened |
-|---|---|---|
-| `what is a KX-Code?` | 1.83 | **Refused** — but the answer was right there in the glossary |
-| `what's our policy on crypto payments?` | 9.60 | **Answered** — confidently retrieved the *vacation policy*, because the word "policy" appears in every document |
+| Question | BM25 score | Score threshold | Concept coverage |
+| --- | --- | --- | --- |
+| `what is a KX-Code?` | 1.76 | **refused** — the answer was right there in the glossary | **answered**, cites Glossary |
+| `what's our policy on crypto payments?` | 10.08 | **answered** — confidently retrieved the *vacation policy*, because the word "policy" appears in every document | **refused** |
+
+The question the corpus cannot answer scores six times higher than one it can.
+No threshold exists that gets both of these right.
 
 BM25 scores are not comparable across queries. They scale with query length and
 with how rare the chosen words happen to be. Thresholding an incomparable number
@@ -173,8 +193,8 @@ dead-ends:
 
 ![Vertex AI Search requires a Workspace organisation](docs/vertex-requires-org.webp)
 
-> **Identity provider not configurable.**
-> Your project must belong to an organization to configure identity providers.
+> **Identity provider not configurable.** Your project must belong to an
+> organization to configure identity providers.
 
 The chain: the Drive connector mandates ACL enforcement → ACL enforcement
 requires Google Identity → Google Identity requires a Workspace organisation.
@@ -294,11 +314,11 @@ and `manifest.py` contain no transport code at all, and they are already driven 
 two independent front ends in this repository:
 
 ```
-      corpus → retrieval → gate → answering + citations
-                            ▲
-             ┌──────────────┼──────────────┐
-          cli.py      slack_bot.py    web API
-                                      (not built — an adapter, not a rewrite)
+corpus → retrieval → gate → answering + citations
+                      ▲
+       ┌──────────────┼──────────────┐
+    cli.py      slack_bot.py    web API
+                                (not built — an adapter, not a rewrite)
 ```
 
 That is why a third front end is an adapter, not a rewrite. A React/Next.js chat
