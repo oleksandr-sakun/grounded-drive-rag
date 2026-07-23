@@ -317,8 +317,8 @@ two independent front ends in this repository:
 corpus → retrieval → gate → answering + citations
                       ▲
        ┌──────────────┼──────────────┐
-    cli.py      slack_bot.py    web API
-                                (not built — an adapter, not a rewrite)
+    cli.py      slack_bot.py   mcp_server.py    web API
+                                                (not built)
 ```
 
 That is why a third front end is an adapter, not a rewrite. A React/Next.js chat
@@ -328,6 +328,196 @@ sit outside the workspace entirely; not worth building *first*, when they don't.
 
 The interface is a deployment decision. The grounding is an architectural one.
 Only one of them is expensive to get wrong.
+
+---
+
+## Interface: MCP
+
+Slack needed `slack_bot.py`. Cursor would need another file. A customer's own
+chat would need a third. Each one is a week of someone's life spent on transport
+code that teaches nothing.
+
+MCP collapses that into one server. `mcp_server.py` exposes the same retrieval
+the Slack bot uses — `answer_question`, `search_documents`, `list_documents` —
+and any MCP client connects to it without a line of new code. Claude Desktop,
+Cursor, Claude Code, a phone. The core still knows nothing about any of them.
+
+```
+corpus → retrieval → gate → answering + citations
+                      ▲
+       ┌──────────────┼──────────────┬──────────────┐
+    cli.py      slack_bot.py   mcp_server.py    web API
+                                                (not built)
+```
+
+**`answer_question` does not call an LLM, on purpose.** The MCP client is
+already a model; a second one here would add a round trip, a bill, and a second
+place for the answer to drift. So the server runs Gate 1 — the deterministic
+half, the one that actually prevents hallucination — and returns either numbered
+sources with citation rules, or a refusal naming the gate that fired. The client
+model becomes Gate 2.
+
+The consequence is the part worth showing. Ask an MCP client something the
+corpus has never heard of and it does not invent a plausible answer:
+
+```
+REFUSED (gate: unknown-term)
+```
+
+The grounding gate survives the protocol boundary. That is the whole claim of
+this repository, demonstrated in someone else's chat window rather than mine.
+
+Two transports. `stdio` by default, for a client that spawns the process
+directly. `streamable-http` behind a tunnel for everything else — a phone, a
+sandboxed desktop app, a client on another continent. Same tools, same gate.
+
+```bash
+./dev-serve.sh                                    # tunnel + http server, prints the URL
+cd src && ../.venv/bin/python smoke_mcp.py        # stdio, 5/5
+cd src && ../.venv/bin/python smoke_http.py URL   # http, 5/5
+```
+
+Auth on http is a bearer token, accepted in the `Authorization` header or as
+`?token=`. The query parameter is strictly worse — URLs reach proxy logs and
+browser history — but a client whose connector form accepts a URL and nothing
+else leaves no other option. The server refuses to start on http without a
+token: behind a tunnel this process is on the public internet, and a forgotten
+environment variable would otherwise publish the corpus in silence.
+
+---
+
+## Five more things that broke: remote MCP
+
+Same rule as before — everything here was hit while building it, and every one
+of them presents as a different problem than it is.
+
+### 8. stdio over ssh dies before it can tell you why
+
+The obvious way to reach a server on another machine: `command: ssh`, and let
+the client talk to the remote process over stdin/stdout. It fails, and the log
+says only this:
+
+```
+Server started and connected successfully
+Server transport closed          ← 96 ms later
+```
+
+96 ms is not enough time to open a TCP connection, let alone start Python. The
+process died before the network. `ssh -vvv -E logfile` produced no file at all,
+which narrows it further: the binary exits before it initialises logging.
+
+The same command pasted into a terminal works and hangs waiting for stdin,
+exactly as it should. So the command is right and the environment it runs in is
+wrong — a packaged desktop application does not hand its children the
+environment your shell has, and `~` is not where you think it is.
+
+**What replaced it:** http. Which turned out to be the better answer anyway —
+see below.
+
+### 9. `421 Misdirected Request` comes from the SDK, not the proxy
+
+The tunnel worked. `curl` to the public URL returned `421`, which reads like a
+Cloudflare problem and is not one.
+
+The MCP SDK has DNS-rebinding protection: it checks the `Host` header against an
+allowlist and answers `421` to anything unlisted. Localhost is allowed by
+default. Behind a tunnel the Host becomes the public hostname, which is not.
+
+```python
+TransportSecuritySettings(
+    enable_dns_rebinding_protection=True,
+    allowed_hosts=[PUBLIC_HOST, "127.0.0.1:*", "localhost:*"],
+)
+```
+
+The check is correct and worth keeping — `Host: evil.com` still gets `421`. It
+just has to be told which hostname is legitimately yours.
+
+### 10. A `401` on `/.well-known` starts an OAuth loop that never ends
+
+With the token working, the handshake returned `200` and the client still
+reported the server as unreachable. The log explains it:
+
+```
+POST /mcp?token=...                              200 OK
+GET  /.well-known/oauth-protected-resource/mcp   401
+GET  /.well-known/oauth-authorization-server     401
+POST /register                                   401
+POST /mcp?token=...                              200 OK      ← starts over
+```
+
+The auth middleware was answering `401` to *everything*, including the OAuth
+discovery paths, and attaching `WWW-Authenticate: Bearer`. To a client that is
+not "wrong token" — it is "this server speaks OAuth, go negotiate". So it
+negotiates, gets `401` again, and loops.
+
+**The fix is counter-intuitive: return `404`, not `401`.** A `404` on those
+paths means "no OAuth here", after which the client is content with the token it
+already has. The `WWW-Authenticate` header goes too — that header *is* the
+signal that starts the dance.
+
+A client that connected while the server still behaved the old way caches the
+conclusion. Deleting and re-adding the connector was required; restarting was
+not enough.
+
+### 11. `BaseHTTPMiddleware` silently breaks the stream
+
+The natural way to add auth to a Starlette app:
+
+```python
+class BearerAuth(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next): ...
+```
+
+`initialize` returns `200`. Nothing after it works. The client reports the
+server as unreachable; the server log shows one successful request and then
+silence — no error on either side.
+
+`BaseHTTPMiddleware` buffers the response body in order to hand it to
+`dispatch`. Streamable HTTP is an SSE stream. Buffering a stream that never ends
+means it never arrives.
+
+**What replaced it:** a raw ASGI middleware, which inspects `scope` and passes
+`receive`/`send` through untouched. Roughly the same number of lines, and the
+response is never materialised.
+
+This is also why `smoke_http.py` exercises `tools/list` and real tool calls
+rather than just the handshake. A test that stops at `initialize` passes on a
+server that is completely broken.
+
+### 12. `cloudflared` inherits a config file you didn't mean it to
+
+A quick tunnel came up, registered a subdomain, and returned `404` to every
+path — including paths that should have returned `401` from our own middleware.
+Nothing appeared in the tunnel's log, meaning requests were never reaching the
+machine.
+
+The cause was in the startup output all along:
+
+```
+Settings: map[cred-file:/home/user/.cloudflared/0c3ff864-....json ...]
+```
+
+A quick tunnel has no credentials. It had picked up `~/.cloudflared/config.yml`
+belonging to a *different*, named tunnel running on the same host, and routed by
+those rules instead.
+
+```bash
+cloudflared --config /dev/null tunnel --url http://127.0.0.1:8765
+```
+
+`--config /dev/null` is load-bearing on any host that already runs a named
+tunnel. `dev-serve.sh` passes it.
+
+### Also worth knowing
+
+**A remote MCP URL must be `https`.** Which rules out reaching a server across
+your own LAN by IP, however local the setup — the tunnel is not optional even
+when the two machines are a metre apart.
+
+**Quick tunnels get a new subdomain on every start.** The connector URL has to
+be updated each time. `dev-serve.sh` at least prints the new one, complete with
+token, ready to paste. A named tunnel fixes it properly and needs a domain.
 
 ---
 

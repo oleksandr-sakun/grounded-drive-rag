@@ -7,5 +7,3 @@ __pycache__/
 *.bak
 *.bak[0-9]
 .embeddings.json
-corpus-drive/
-manifest-drive.json
