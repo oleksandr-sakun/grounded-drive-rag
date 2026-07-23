@@ -1,0 +1,18 @@
+[Unit]
+Description=drivebot Cloudflare Tunnel (Named)
+After=network-online.target drivebot-mcp.service
+Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=osakun
+# --config is mandatory, not stylistic. Without it cloudflared reads whatever
+# sits in ~/.cloudflared and routes by that tunnel's rules instead of ours.
+ExecStart=/usr/bin/cloudflared --no-autoupdate --config /opt/freelance/demo/drivebot/deploy/tunnel.yml tunnel run drivebot
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,27 @@
+[Unit]
+Description=drivebot MCP server (streamable-http)
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=osakun
+WorkingDirectory=/opt/freelance/demo/drivebot/src
+# The server reads .env itself for GEMINI_API_KEY and MCP_TOKEN. These are the
+# settings that describe how it is being served, which belong to the unit
+# rather than to the project: they differ between a laptop and this host.
+# MCP_PUBLIC_HOST is not decoration -- the SDK rejects any Host header not on
+# its allowlist with 421, so a tunnel hostname missing here breaks every
+# request while localhost keeps working.
+Environment=MCP_TRANSPORT=streamable-http
+Environment=MCP_PUBLIC_HOST=drivebot.osakun.dev
+Environment=RAG_BACKEND=hybrid
+Environment=CORPUS_DIR=corpus
+ExecStart=/opt/freelance/demo/drivebot/.venv/bin/python mcp_server.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

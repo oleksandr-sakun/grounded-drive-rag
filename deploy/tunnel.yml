@@ -1,0 +1,13 @@
+# Named tunnel for the drivebot MCP server.
+# Lives next to the project rather than in ~/.cloudflared so that other
+# cloudflared commands on this host cannot inherit it. Referenced explicitly
+# by --config; without that, cloudflared silently picks up whatever config
+# happens to sit in the home directory -- which on this host used to be the
+# FLOA tunnel, and cost an hour of chasing 404s that never reached the origin.
+tunnel: a78363f5-9697-4b08-badf-6db7f5aefe67
+credentials-file: /opt/freelance/demo/drivebot/secrets/tunnel-credentials.json
+
+ingress:
+  - hostname: drivebot.osakun.dev
+    service: http://localhost:8765
+  - service: http_status:404
